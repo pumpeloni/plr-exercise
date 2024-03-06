@@ -9,7 +9,7 @@ from plr_exercise.models import Net
 from plr_exercise import PLR_ROOT_DIR
 import wandb
 import os
-
+import optuna
 
 def train(args, model, device, train_loader, optimizer, epoch):
     model.train()
@@ -59,6 +59,35 @@ def test(model, device, test_loader, epoch):
     )
     wandb.log({"test_loss": test_loss, "epoch": epoch})
 
+def train_model(trial, args, model, device):
+    lr = trial.suggest_float("lr", 1e-5, 1e-2, log=True)
+    batch_size = trial.suggest_categorical("batch_size", [32, 64, 128, 256])
+    gamma = trial.suggest_float("gamma", 0.5, 0.9, step=0.1)
+
+    use_cuda = not args.no_cuda and torch.cuda.is_available()
+
+    train_kwargs = {"batch_size": batch_size}
+    test_kwargs = {"batch_size": args.test_batch_size}
+    if use_cuda:
+        cuda_kwargs = {"num_workers": 1, "pin_memory": True, "shuffle": True}
+        train_kwargs.update(cuda_kwargs)
+        test_kwargs.update(cuda_kwargs)
+
+    transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))])
+    dataset1 = datasets.MNIST("../data", train=True, download=True, transform=transform)
+    dataset2 = datasets.MNIST("../data", train=False, transform=transform)
+    train_loader = torch.utils.data.DataLoader(dataset1, **train_kwargs)
+    test_loader = torch.utils.data.DataLoader(dataset2, **test_kwargs)
+
+    optimizer = optim.Adam(model.parameters(), lr=lr)
+    scheduler = StepLR(optimizer, step_size=1, gamma=gamma)
+
+    for epoch in range(args.epochs):
+        train(args, model, device, train_loader, optimizer, epoch)
+        loss = test(model, device, test_loader, epoch)
+        scheduler.step()
+
+    return loss
 
 def main():
     # Training settings
@@ -104,7 +133,7 @@ def main():
         device = torch.device("cuda")
     else:
         device = torch.device("cpu")
-
+    '''
     train_kwargs = {"batch_size": args.batch_size}
     test_kwargs = {"batch_size": args.test_batch_size}
     if use_cuda:
@@ -126,6 +155,13 @@ def main():
         train(args, model, device, train_loader, optimizer, epoch)
         test(model, device, test_loader, epoch)
         scheduler.step()
+    '''
+    model = Net().to(device)
+    
+    opt_study = optuna.create_study(direction="minimize")
+    opt_study.optimize(lambda trial: train_model(trial, args, model, device), n_trials=10)
+    print(f'Best parameters: {opt_study.best_params}')
+    
 
     if args.save_model:
         torch.save(model.state_dict(), "mnist_cnn.pt")
