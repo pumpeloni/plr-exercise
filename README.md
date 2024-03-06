@@ -188,3 +188,4 @@ This may include:
 
 1. Install Cuda
 2. Apply Visualization-Tools for datasets like seaborn, matplotlib
+3. How to solve a Merge Problem poperly
