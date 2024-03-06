@@ -4,6 +4,12 @@ import torch.nn.functional as F
 
 
 class Net(nn.Module):
+    """Simple Convolutional Neural Network for image classification.
+
+    This network consists of two convolutional layers followed by
+    max-pooling and dropout layers. Then, it has two fully connected
+    layers for classification.
+    """
     def __init__(self):
         super(Net, self).__init__()
         self.conv1 = nn.Conv2d(1, 32, 3, 1)

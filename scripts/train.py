@@ -12,6 +12,7 @@ import os
 import optuna
 
 def train(args, model, device, train_loader, optimizer, epoch):
+    """Train the model on the training dataset."""
     model.train()
     for batch_idx, (data, target) in enumerate(train_loader):
 
@@ -37,6 +38,7 @@ def train(args, model, device, train_loader, optimizer, epoch):
 
 
 def test(model, device, test_loader, epoch):
+    """Test the model on the test dataset."""
     model.eval()
     test_loss = 0
     correct = 0
@@ -60,6 +62,7 @@ def test(model, device, test_loader, epoch):
     wandb.log({"test_loss": test_loss, "epoch": epoch})
 
 def train_model(trial, args, model, device):
+    """Train the model with the given hyperparameters. Optuna will use this function to optimize the model."""
     lr = trial.suggest_float("lr", 1e-5, 1e-2, log=True)
     batch_size = trial.suggest_categorical("batch_size", [32, 64, 128, 256])
     gamma = trial.suggest_float("gamma", 0.5, 0.9, step=0.1)
@@ -90,6 +93,7 @@ def train_model(trial, args, model, device):
     return loss
 
 def main():
+    """Train the model and log the results to Weights & Biases."""
     # Training settings
     parser = argparse.ArgumentParser(description="PyTorch MNIST Example")
     parser.add_argument(

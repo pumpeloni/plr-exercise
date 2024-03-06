@@ -9,6 +9,7 @@ import time
 
 
 class Net(nn.Module):
+    """Simple CNN model for MNIST."""
     def __init__(self):
         super(Net, self).__init__()
         self.conv1 = nn.Conv2d(1, 32, 3, 1)
@@ -35,6 +36,12 @@ class Net(nn.Module):
 
 
 def main():
+    """Main function to run the training procedure.
+
+    This function sets up the training settings, loads the MNIST dataset,
+    initializes the neural network model, and performs timing experiments.
+
+    """
     # Training settings
     parser = argparse.ArgumentParser(description="PyTorch MNIST Example")
     parser.add_argument(
